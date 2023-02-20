@@ -38,7 +38,7 @@ class AClimbingCharacter : public ACharacter
 	class UInputAction* LookAction;
 
 public:
-	AClimbingCharacter();
+	AClimbingCharacter(const FObjectInitializer& ObjectInitializer);
 	
 
 protected:

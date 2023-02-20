@@ -14,7 +14,8 @@
 //////////////////////////////////////////////////////////////////////////
 // AClimbingCharacter
 
-AClimbingCharacter::AClimbingCharacter()
+AClimbingCharacter::AClimbingCharacter(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)// ZC: Needed so we ourt custom character can specify a custom movement component
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);

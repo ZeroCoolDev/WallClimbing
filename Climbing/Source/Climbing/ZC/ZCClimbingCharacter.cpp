@@ -1,11 +1,12 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 
 #include "Climbing/ZC/ZCClimbingCharacter.h"
+#include "Climbing/ZC/ZCCharacterMovementComponent.h"
 
-AZCClimbingCharacter::AZCClimbingCharacter()
+AZCClimbingCharacter::AZCClimbingCharacter(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer.SetDefaultSubobjectClass<UZCCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
 	PrimaryActorTick.bCanEverTick = true;
+	MovementComponent = Cast<UZCCharacterMovementComponent>(GetCharacterMovement());
 }
 
 void AZCClimbingCharacter::BeginPlay()
@@ -14,6 +15,9 @@ void AZCClimbingCharacter::BeginPlay()
 
 	if (GEngine)
 		GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Green, TEXT("Confirming custom character class is being used"));
+
+	if (UZCCharacterMovementComponent* ZCMoveComponent = GetZCMovementComponent())
+		ZCMoveComponent->DrawDebug();
 }
 
 void AZCClimbingCharacter::Tick(float DeltaTime)

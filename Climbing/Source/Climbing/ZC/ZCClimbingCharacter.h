@@ -15,17 +15,17 @@ class CLIMBING_API AZCClimbingCharacter : public AClimbingCharacter
 	GENERATED_BODY()
 
 public:
-	AZCClimbingCharacter();
+	AZCClimbingCharacter(const FObjectInitializer&);
 	virtual ~AZCClimbingCharacter(){}
+	virtual void Tick(float DeltaTime) override;
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE class UZCCharacterMovementComponent* GetZCMovementComponent() const { return MovementComponent; }
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	UPROPERTY(Category=Character, VisibleAnywhere, BlueprintReadOnly)
+	class UZCCharacterMovementComponent* MovementComponent;
 };

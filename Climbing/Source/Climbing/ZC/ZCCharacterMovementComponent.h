@@ -13,5 +13,10 @@ UCLASS()
 class CLIMBING_API UZCCharacterMovementComponent : public UCharacterMovementComponent
 {
 	GENERATED_BODY()
-	
+
+public:
+	UZCCharacterMovementComponent(){}
+	virtual ~UZCCharacterMovementComponent(){}
+
+	void DrawDebug();
 };
