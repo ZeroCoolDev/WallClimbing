@@ -62,17 +62,20 @@ bool UZCCharacterMovementComponent::VerticalClimbCheck(const FHitResult& WallHit
 	const FVector WallHorizontalNormal = WallHit.Normal.GetSafeNormal2D();
 	const float VerticalAngleCos = FVector::DotProduct(WallHit.Normal, WallHorizontalNormal);
 
+	// Check if the surface is too flat
 	const bool bIsCeilingOrFloor = FMath::IsNearlyZero(VerticalAngleCos);
 
-	// Calculate how far out to trace based off steepness
+	// Check if surface is high enough
 	const float CollisionEdge = CollisionCapsulRadius + CollisionCapsulForwardOffset;
 	const float SteepnessMultiplier = 1 + (1 - VerticalAngleCos) * 6; // magic number here extends it _just_ a bit further so it works on all the angles we need.
 	const float TraceLength = CollisionEdge * SteepnessMultiplier;
-	const bool bSurfaceHighEnough = EyeHeightTrace(TraceLength);
+	const bool bIsHighEnough = EyeHeightTrace(TraceLength);
 
-	//TODO: Add a minimum steepness requirement otherwise its possible to allow climbing on a very long, not so steep surface that we can otherwise walk up if it _just_ hits the bottom of the collider
 
-	return bSurfaceHighEnough && !bIsCeilingOrFloor;
+	// TODO: minimum steepness requirement otherwise its possible to allow climbing on a very long, not so steep surface that we can otherwise walk up if it _just_ hits the bottom of the collider
+	// TODO: perhaps use GetWalkableFloorAngle() to check
+
+	return bIsHighEnough && !bIsCeilingOrFloor;
 }
 
 bool UZCCharacterMovementComponent::EyeHeightTrace(const float TraceDistance) const

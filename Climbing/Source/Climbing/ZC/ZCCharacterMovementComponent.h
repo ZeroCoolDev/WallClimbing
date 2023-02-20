@@ -37,6 +37,8 @@ private:
 
 	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere)
 	float MinHorizontalDegreesToStartClimbing = 25;
+	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere)
+	float MinVerticalDegreesToStartClimbing = 45; // Based off UE5's default CharacterMovementComponent::WalkableFloorAngle
 
 	TArray<FHitResult> CurrentWallHits;
 	FCollisionQueryParams ClimbQueryParams;
