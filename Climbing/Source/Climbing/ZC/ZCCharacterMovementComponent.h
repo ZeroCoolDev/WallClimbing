@@ -23,11 +23,15 @@ private:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	void SweepAndStoreWallHits();
+	bool CanStartClimbing();
 
 	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere)
 	int CollisionCapsulRadius = 50;
 	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere)
 	int CollisionCapsulHalfHeight = 72;
+
+	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere)
+	float MinHorizontalDegreesToStartClimbing = 25;
 
 	TArray<FHitResult> CurrentWallHits;
 	FCollisionQueryParams ClimbQueryParams;
