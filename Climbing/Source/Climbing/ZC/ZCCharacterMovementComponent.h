@@ -23,12 +23,17 @@ private:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	void SweepAndStoreWallHits();
-	bool CanStartClimbing();
+	bool CanStartClimbing() const;
+	bool HorizontalClimbCheck(const FHitResult& WallHit) const;
+	bool VerticalClimbCheck(const FHitResult& WallHit) const;
+	bool EyeHeightTrace(const float TraceDistance) const;
 
 	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere)
 	int CollisionCapsulRadius = 50;
 	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere)
 	int CollisionCapsulHalfHeight = 72;
+	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere)
+	int CollisionCapsulForwardOffset = 20;
 
 	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere)
 	float MinHorizontalDegreesToStartClimbing = 25;
@@ -37,5 +42,6 @@ private:
 	FCollisionQueryParams ClimbQueryParams;
 
 public:
-	void DrawDebug(FVector SweepLocation);
+	void DrawEyeTraceDebug(const FVector& Start, const FVector& End) const;
+	void DrawDebug(FVector SweepLocation) const;
 };

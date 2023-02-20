@@ -3,6 +3,8 @@
 
 #include "Climbing/ZC/ZCCharacterMovementComponent.h"
 
+#include "GameFramework/Character.h"
+
 void UZCCharacterMovementComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -22,9 +24,9 @@ void UZCCharacterMovementComponent::SweepAndStoreWallHits()
 {
 	const FCollisionShape CollisionShape = FCollisionShape::MakeCapsule(CollisionCapsulRadius, CollisionCapsulHalfHeight);
 
-	const FVector StartOffset = UpdatedComponent->GetForwardVector() * 20;
+	const FVector StartOffset = UpdatedComponent->GetForwardVector() * CollisionCapsulForwardOffset;
 
-	const FVector Start = UpdatedComponent->GetComponentLocation() + StartOffset;	// 20 units in front
+	const FVector Start = UpdatedComponent->GetComponentLocation() + StartOffset;	// a bit in front
 	const FVector End = Start + UpdatedComponent->GetForwardVector();				// using the same start/end location for a sweep doesn't trigger hits on Landscapes
 
 	TArray<FHitResult> Hits;
@@ -36,27 +38,62 @@ void UZCCharacterMovementComponent::SweepAndStoreWallHits()
 	DrawDebug(Start);
 }
 
-bool UZCCharacterMovementComponent::CanStartClimbing()
+bool UZCCharacterMovementComponent::CanStartClimbing() const
 {
 	for (const FHitResult& WallHit : CurrentWallHits)
-	{
-
-		const FVector WallHorizontalNormal = WallHit.Normal.GetSafeNormal2D();
-
-		const FVector PlayerForward = UpdatedComponent->GetForwardVector();
-		const float HorizontalAngleCos = FVector::DotProduct(PlayerForward, -WallHorizontalNormal);// inverse wall normal so they vectors are pointing the "same" direction
-		const bool bIsLookingCloseEnough = FMath::RadiansToDegrees(FMath::Acos(HorizontalAngleCos)) <= MinHorizontalDegreesToStartClimbing;
-		
-		const float VerticalAngleCos = FVector::DotProduct(WallHit.Normal, WallHorizontalNormal);
-		const bool bIsCeiling = FMath::IsNearlyZero(VerticalAngleCos);
-
-		if (bIsLookingCloseEnough && !bIsCeiling)
+		if (HorizontalClimbCheck(WallHit) && VerticalClimbCheck(WallHit))
 			return true;
-	}
+
 	return false;
 }
 
-void UZCCharacterMovementComponent::DrawDebug(FVector SweepLocation)
+bool UZCCharacterMovementComponent::HorizontalClimbCheck(const FHitResult& WallHit) const
+{
+	const FVector WallHorizontalNormal = WallHit.Normal.GetSafeNormal2D();
+	const FVector PlayerForward = UpdatedComponent->GetForwardVector();
+	const float LookAngleCos = PlayerForward.Dot(-WallHorizontalNormal);// inverse wall normal so the vectors are pointing the "same" direction
+	const float LookAngleDiff = FMath::RadiansToDegrees(FMath::Acos(LookAngleCos));
+	
+	return LookAngleDiff <= MinHorizontalDegreesToStartClimbing;
+}
+
+bool UZCCharacterMovementComponent::VerticalClimbCheck(const FHitResult& WallHit) const
+{
+	const FVector WallHorizontalNormal = WallHit.Normal.GetSafeNormal2D();
+	const float VerticalAngleCos = FVector::DotProduct(WallHit.Normal, WallHorizontalNormal);
+
+	const bool bIsCeilingOrFloor = FMath::IsNearlyZero(VerticalAngleCos);
+
+	// Calculate how far out to trace based off steepness
+	const float CollisionEdge = CollisionCapsulRadius + CollisionCapsulForwardOffset;
+	const float SteepnessMultiplier = 1 + (1 - VerticalAngleCos) * 6; // magic number here extends it _just_ a bit further so it works on all the angles we need.
+	const float TraceLength = CollisionEdge * SteepnessMultiplier;
+	const bool bSurfaceHighEnough = EyeHeightTrace(TraceLength);
+
+	//TODO: Add a minimum steepness requirement otherwise its possible to allow climbing on a very long, not so steep surface that we can otherwise walk up if it _just_ hits the bottom of the collider
+
+	return bSurfaceHighEnough && !bIsCeilingOrFloor;
+}
+
+bool UZCCharacterMovementComponent::EyeHeightTrace(const float TraceDistance) const
+{
+	FHitResult UpperEdgeHit;
+
+	const ACharacter* Owner = GetCharacterOwner();
+	const FVector EyeHeight = UpdatedComponent->GetComponentLocation() + (UpdatedComponent->GetUpVector() * (Owner ? Owner->BaseEyeHeight : 1));
+	const FVector End = EyeHeight + (UpdatedComponent->GetForwardVector() * TraceDistance);
+
+	DrawEyeTraceDebug(EyeHeight, End);
+
+	return GetWorld()->LineTraceSingleByChannel(UpperEdgeHit, EyeHeight, End, ECC_WorldStatic, ClimbQueryParams);
+}
+
+void UZCCharacterMovementComponent::DrawEyeTraceDebug(const FVector& Start, const FVector& End) const
+{
+	DrawDebugLine(GetWorld(), Start, End, FColor::Yellow);
+}
+
+void UZCCharacterMovementComponent::DrawDebug(FVector SweepLocation) const
 {
 	// collider sweep
 	FColor SweepColor = CurrentWallHits.Num() == 0 ? FColor::White : CanStartClimbing() ? FColor::Yellow : FColor::Red;
