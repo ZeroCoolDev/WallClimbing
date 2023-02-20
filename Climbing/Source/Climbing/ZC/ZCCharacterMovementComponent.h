@@ -18,5 +18,20 @@ public:
 	UZCCharacterMovementComponent(){}
 	virtual ~UZCCharacterMovementComponent(){}
 
-	void DrawDebug();
+private:
+	virtual void BeginPlay() override;
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+	void SweepAndStoreWallHits();
+
+	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere)
+	int CollisionCapsulRadius = 50;
+	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere)
+	int CollisionCapsulHalfHeight = 72;
+
+	TArray<FHitResult> CurrentWallHits;
+	FCollisionQueryParams ClimbQueryParams;
+
+public:
+	void DrawDebug(FVector SweepLocation);
 };

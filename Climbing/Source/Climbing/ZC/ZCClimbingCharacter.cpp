@@ -15,9 +15,6 @@ void AZCClimbingCharacter::BeginPlay()
 
 	if (GEngine)
 		GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Green, TEXT("Confirming custom character class is being used"));
-
-	if (UZCCharacterMovementComponent* ZCMoveComponent = GetZCMovementComponent())
-		ZCMoveComponent->DrawDebug();
 }
 
 void AZCClimbingCharacter::Tick(float DeltaTime)
