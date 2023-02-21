@@ -23,9 +23,19 @@ public:
 	UFUNCTION(BlueprintPure)
 	FORCEINLINE class UZCCharacterMovementComponent* GetZCMovementComponent() const { return MovementComponent; }
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* ClimbAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* CancelClimbAction;
+
 protected:
 	virtual void BeginPlay() override;
+	virtual void Move(const FInputActionValue& Value) override;
 
-	UPROPERTY(Category=Character, VisibleAnywhere, BlueprintReadOnly)
+	// Process raw input for velocity for climbing
+	void Climb(const FInputActionValue& Value);
+	void CancelClimb(const FInputActionValue& Value);
+
+	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly)
 	class UZCCharacterMovementComponent* MovementComponent;
 };

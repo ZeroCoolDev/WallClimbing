@@ -84,7 +84,6 @@ void AClimbingCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 
 		//Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AClimbingCharacter::Look);
-
 	}
 
 }
@@ -124,7 +123,5 @@ void AClimbingCharacter::Look(const FInputActionValue& Value)
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
 }
-
-
 
 

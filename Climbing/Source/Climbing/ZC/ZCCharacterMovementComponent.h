@@ -18,9 +18,19 @@ public:
 	UZCCharacterMovementComponent(){}
 	virtual ~UZCCharacterMovementComponent(){}
 
+	UFUNCTION(BlueprintPure)
+	bool IsClimbing() const;
+
+	UFUNCTION(BlueprintPure)
+	FVector GetClimbSurfaceNormal() const;
+
+	void WantsClimbing();
+	void CancelClimbing();
+
 private:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	virtual void OnMovementUpdated(float DeltaSeconds, const FVector& OldLocation, const FVector& OldVelocity) override;
 
 	void SweepAndStoreWallHits();
 	bool CanStartClimbing() const;
@@ -42,6 +52,8 @@ private:
 
 	TArray<FHitResult> CurrentWallHits;
 	FCollisionQueryParams ClimbQueryParams;
+
+	bool bWantsToClimb = false;
 
 private:
 	void DrawEyeTraceDebug(const FVector& Start, const FVector& End) const;

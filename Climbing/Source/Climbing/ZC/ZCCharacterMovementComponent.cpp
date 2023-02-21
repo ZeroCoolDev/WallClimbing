@@ -2,16 +2,39 @@
 
 
 #include "Climbing/ZC/ZCCharacterMovementComponent.h"
+#include "Climbing/ZC/ZCTypes.h"
 
 #include "GameFramework/Character.h"
 
 static TAutoConsoleVariable<bool> CVarDebugToggle(
 	TEXT("DebugToggle"),
-	false,
+	true,
 	TEXT("Turns on debug information\n")
 	TEXT("0: off\n")
 	TEXT("1: on"),
 	ECVF_Default);
+
+bool UZCCharacterMovementComponent::IsClimbing() const
+{
+	return MovementMode == EMovementMode::MOVE_Custom && CustomMovementMode == ECustomMovementMode::CMOVE_Climbing;
+}
+
+FVector UZCCharacterMovementComponent::GetClimbSurfaceNormal() const
+{
+	//TODO: Figure out a better way to do this. Average them all out probably
+	return CurrentWallHits.Num() > 0 ? CurrentWallHits[0].Normal : FVector::Zero();
+}
+
+void UZCCharacterMovementComponent::WantsClimbing()
+{
+	if (!bWantsToClimb)
+		bWantsToClimb = CanStartClimbing();
+}
+
+void UZCCharacterMovementComponent::CancelClimbing()
+{
+	bWantsToClimb = false;
+}
 
 void UZCCharacterMovementComponent::BeginPlay()
 {
@@ -30,6 +53,14 @@ void UZCCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Ti
 	if (bIsDebugEnabled != CVarDebugToggle.GetValueOnAnyThread())
 		bIsDebugEnabled = CVarDebugToggle.GetValueOnAnyThread();
 
+}
+
+void UZCCharacterMovementComponent::OnMovementUpdated(float DeltaSeconds, const FVector& OldLocation, const FVector& OldVelocity)
+{
+	if (bWantsToClimb)
+		SetMovementMode(EMovementMode::MOVE_Custom, ECustomMovementMode::CMOVE_Climbing);
+
+	Super::OnMovementUpdated(DeltaSeconds, OldLocation, OldVelocity);
 }
 
 void UZCCharacterMovementComponent::SweepAndStoreWallHits()
