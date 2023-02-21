@@ -5,6 +5,14 @@
 
 #include "GameFramework/Character.h"
 
+static TAutoConsoleVariable<bool> CVarDebugToggle(
+	TEXT("DebugToggle"),
+	false,
+	TEXT("Turns on debug information\n")
+	TEXT("0: off\n")
+	TEXT("1: on"),
+	ECVF_Default);
+
 void UZCCharacterMovementComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -18,6 +26,10 @@ void UZCCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Ti
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	SweepAndStoreWallHits();
+
+	if (bIsDebugEnabled != CVarDebugToggle.GetValueOnAnyThread())
+		bIsDebugEnabled = CVarDebugToggle.GetValueOnAnyThread();
+
 }
 
 void UZCCharacterMovementComponent::SweepAndStoreWallHits()
@@ -93,11 +105,17 @@ bool UZCCharacterMovementComponent::EyeHeightTrace(const float TraceDistance) co
 
 void UZCCharacterMovementComponent::DrawEyeTraceDebug(const FVector& Start, const FVector& End) const
 {
+	if (!bIsDebugEnabled)
+		return;
+
 	DrawDebugLine(GetWorld(), Start, End, FColor::Yellow);
 }
 
 void UZCCharacterMovementComponent::DrawDebug(FVector SweepLocation) const
 {
+	if (!bIsDebugEnabled)
+		return;
+
 	// collider sweep
 	FColor SweepColor = CurrentWallHits.Num() == 0 ? FColor::White : CanStartClimbing() ? FColor::Yellow : FColor::Red;
 	DrawDebugCapsule(GetWorld(), SweepLocation, CollisionCapsulHalfHeight, CollisionCapsulRadius, FQuat::Identity, SweepColor);

@@ -43,7 +43,8 @@ private:
 	TArray<FHitResult> CurrentWallHits;
 	FCollisionQueryParams ClimbQueryParams;
 
-public:
+private:
 	void DrawEyeTraceDebug(const FVector& Start, const FVector& End) const;
 	void DrawDebug(FVector SweepLocation) const;
+	bool bIsDebugEnabled = false;
 };
