@@ -5,6 +5,7 @@
 #include "Climbing/ZC/ZCTypes.h"
 
 #include "GameFramework/Character.h"
+#include "Components/CapsuleComponent.h"
 
 static TAutoConsoleVariable<bool> CVarDebugToggle(
 	TEXT("DebugToggle"),
@@ -61,6 +62,46 @@ void UZCCharacterMovementComponent::OnMovementUpdated(float DeltaSeconds, const 
 		SetMovementMode(EMovementMode::MOVE_Custom, ECustomMovementMode::CMOVE_Climbing);
 
 	Super::OnMovementUpdated(DeltaSeconds, OldLocation, OldVelocity);
+}
+
+void UZCCharacterMovementComponent::PhysCustom(float deltaTime, int32 Iterations)
+{
+	if (CustomMovementMode == ECustomMovementMode::CMOVE_Climbing)
+		PhysClimbing(deltaTime, Iterations);
+
+	Super::PhysCustom(deltaTime, Iterations);
+}
+
+void UZCCharacterMovementComponent::OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode)
+{
+	if (IsClimbing())
+	{
+		bOrientRotationToMovement = false;
+
+		// Shrink down
+		UCapsuleComponent* Capsule = CharacterOwner->GetCapsuleComponent();
+		if (Capsule)
+			Capsule->SetCapsuleHalfHeight(Capsule->GetUnscaledCapsuleHalfHeight() - CollisionCapsulClimbingShinkAmount);
+	}
+
+	const bool bWasClimbing = PreviousCustomMode == EMovementMode::MOVE_Custom && PreviousCustomMode == ECustomMovementMode::CMOVE_Climbing;
+	if (bWasClimbing)
+	{
+		bOrientRotationToMovement = true;
+
+		// Reset pitch so we end standing straight up
+		const FRotator StandRotation = FRotator(0, UpdatedComponent->GetComponentRotation().Yaw, 0);
+		UpdatedComponent->SetRelativeRotation(StandRotation);
+
+		UCapsuleComponent* Capsule = CharacterOwner->GetCapsuleComponent();
+		if (Capsule)
+			Capsule->SetCapsuleHalfHeight(Capsule->GetUnscaledCapsuleHalfHeight() + CollisionCapsulClimbingShinkAmount);
+
+		// After exiting climbing mode, reset velocity and acceleration
+		StopMovementImmediately();
+	}
+
+	Super::OnMovementModeChanged(PreviousMovementMode, PreviousCustomMode);
 }
 
 void UZCCharacterMovementComponent::SweepAndStoreWallHits()
@@ -132,6 +173,11 @@ bool UZCCharacterMovementComponent::EyeHeightTrace(const float TraceDistance) co
 	DrawEyeTraceDebug(EyeHeight, End);
 
 	return GetWorld()->LineTraceSingleByChannel(UpperEdgeHit, EyeHeight, End, ECC_WorldStatic, ClimbQueryParams);
+}
+
+void UZCCharacterMovementComponent::PhysClimbing(float deltaTime, int32 Iterations)
+{
+
 }
 
 void UZCCharacterMovementComponent::DrawEyeTraceDebug(const FVector& Start, const FVector& End) const

@@ -31,6 +31,8 @@ private:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	virtual void OnMovementUpdated(float DeltaSeconds, const FVector& OldLocation, const FVector& OldVelocity) override;
+	virtual void PhysCustom(float deltaTime, int32 Iterations) override;
+	virtual void OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode) override;
 
 	void SweepAndStoreWallHits();
 	bool CanStartClimbing() const;
@@ -38,12 +40,16 @@ private:
 	bool VerticalClimbCheck(const FHitResult& WallHit) const;
 	bool EyeHeightTrace(const float TraceDistance) const;
 
+	void PhysClimbing(float deltaTime, int32 Iterations);
+
 	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere)
 	int CollisionCapsulRadius = 50;
 	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere)
 	int CollisionCapsulHalfHeight = 72;
 	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere)
 	int CollisionCapsulForwardOffset = 20;
+	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere, meta=(ClampMin="0.0", ClampMax = "72.0"))
+	int CollisionCapsulClimbingShinkAmount = 30;
 
 	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere)
 	float MinHorizontalDegreesToStartClimbing = 25;
