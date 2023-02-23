@@ -212,23 +212,24 @@ void UZCCharacterMovementComponent::PhysClimbing(float DeltaTime, int32 Iteratio
 
 void UZCCharacterMovementComponent::ComputeSurfaceInfo()
 {
-	// TODO: Take an average of all the hits
-	if (CurrentWallHits.Num() > 0)
-	{
-		CurrentClimbingNormal = CurrentWallHits[0].Normal;
-		CurrentClimbingPosition = CurrentWallHits[0].ImpactPoint;
-	}
-
 	CurrentClimbingNormal = FVector::ZeroVector;
 	CurrentClimbingPosition = FVector::ZeroVector;
 
 	if (CurrentWallHits.IsEmpty())
 		return;
 
+	const FVector Start = UpdatedComponent->GetComponentLocation();
+	const FCollisionShape CollisionShape = FCollisionShape::MakeSphere(6);//TODO: magic number just for a reasonably smol sphere
+
 	for (const FHitResult& WallHit : CurrentWallHits)
 	{
-		CurrentClimbingPosition += WallHit.ImpactPoint;
-		CurrentClimbingNormal += WallHit.Normal;
+		// Using an additional raycast from the character to the point of impact makes sure if the sweep was _under_ or _inside_ geometry we only take the normal of the first face we encounter
+		const FVector End = Start + (WallHit.ImpactPoint - Start).GetSafeNormal() * 120; //TODO: magic number here is just making sure we make it to the surface
+		FHitResult AssistHit;
+		GetWorld()->SweepSingleByChannel(AssistHit, Start, End, FQuat::Identity, ECC_WorldStatic, CollisionShape, ClimbQueryParams);
+
+		CurrentClimbingPosition += AssistHit.ImpactPoint;
+		CurrentClimbingNormal += AssistHit.Normal;
 	}
 
 	// Store position as the mean of all the surface impacts
