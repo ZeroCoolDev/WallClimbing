@@ -83,7 +83,7 @@ void UZCCharacterMovementComponent::OnMovementModeChanged(EMovementMode Previous
 			Capsule->SetCapsuleHalfHeight(Capsule->GetUnscaledCapsuleHalfHeight() - CollisionCapsulClimbingShinkAmount);
 	}
 
-	const bool bWasClimbing = PreviousCustomMode == EMovementMode::MOVE_Custom && PreviousCustomMode == ECustomMovementMode::CMOVE_Climbing;
+	const bool bWasClimbing = PreviousMovementMode == EMovementMode::MOVE_Custom && PreviousCustomMode == ECustomMovementMode::CMOVE_Climbing;
 	if (bWasClimbing)
 	{
 		bOrientRotationToMovement = true;
@@ -187,7 +187,7 @@ bool UZCCharacterMovementComponent::EyeHeightTrace(const float TraceDistance) co
 void UZCCharacterMovementComponent::PhysClimbing(float DeltaTime, int32 Iterations)
 {
 	// Note: Taken from UCharacterMovementComponent::PhysFlying
-	if (DeltaTime > MIN_TICK_TIME)
+	if (DeltaTime < MIN_TICK_TIME)
 		return;
 
 	ComputeSurfaceInfo();
@@ -218,6 +218,22 @@ void UZCCharacterMovementComponent::ComputeSurfaceInfo()
 		CurrentClimbingNormal = CurrentWallHits[0].Normal;
 		CurrentClimbingPosition = CurrentWallHits[0].ImpactPoint;
 	}
+
+	CurrentClimbingNormal = FVector::ZeroVector;
+	CurrentClimbingPosition = FVector::ZeroVector;
+
+	if (CurrentWallHits.IsEmpty())
+		return;
+
+	for (const FHitResult& WallHit : CurrentWallHits)
+	{
+		CurrentClimbingPosition += WallHit.ImpactPoint;
+		CurrentClimbingNormal += WallHit.Normal;
+	}
+
+	// Store position as the mean of all the surface impacts
+	CurrentClimbingPosition /= CurrentWallHits.Num();
+	CurrentClimbingNormal = CurrentClimbingNormal.GetSafeNormal();
 }
 
 void UZCCharacterMovementComponent::ComputeClimbingVelocity(float DeltaTime)
@@ -251,7 +267,7 @@ void UZCCharacterMovementComponent::StopClimbing(float DeltaTime, int32 Iteratio
 void UZCCharacterMovementComponent::MoveAlongClimbingSurface(float DeltaTime)
 {
 	// Note: Taken from UCharacterMovementComponent::PhysFlying
-	const FVector Adjusted = Velocity;
+	const FVector Adjusted = Velocity * DeltaTime;
 
 	FHitResult Hit(1.f);
 
@@ -303,7 +319,16 @@ void UZCCharacterMovementComponent::DrawDebug(FVector SweepLocation) const
 		return;
 
 	// collider sweep
-	FColor SweepColor = CurrentWallHits.Num() == 0 ? FColor::White : CanStartClimbing() ? FColor::Yellow : FColor::Red;
+	FColor SweepColor = FColor::White;
+	if (CurrentWallHits.Num() > 0)
+	{
+		if (IsClimbing())
+			SweepColor = FColor::Green;
+		else if (CanStartClimbing() && !bWantsToClimb)
+			SweepColor = FColor::Yellow;
+		else
+			SweepColor = FColor::Red;
+	}
 	DrawDebugCapsule(GetWorld(), SweepLocation, CollisionCapsulHalfHeight, CollisionCapsulRadius, FQuat::Identity, SweepColor);
 
 	for (const FHitResult& WallHit : CurrentWallHits)

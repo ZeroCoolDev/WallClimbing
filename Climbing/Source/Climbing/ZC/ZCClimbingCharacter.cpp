@@ -53,18 +53,12 @@ void AZCClimbingCharacter::Move(const FInputActionValue& Value)
 
 void AZCClimbingCharacter::Climb(const FInputActionValue& Value)
 {
-	if (GEngine)
-		GEngine->AddOnScreenDebugMessage(-1, 0.1, FColor::Green, TEXT("Climb [ON]"));
-
 	if (MovementComponent)
 		MovementComponent->WantsClimbing();
 }
 
 void AZCClimbingCharacter::CancelClimb(const FInputActionValue& Value)
 {
-	if (GEngine)
-		GEngine->AddOnScreenDebugMessage(-1, 0.1, FColor::Red, TEXT("Climb [OFF]"));
-
 	if (MovementComponent)
 		MovementComponent->CancelClimbing();
 }
