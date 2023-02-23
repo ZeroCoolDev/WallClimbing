@@ -22,8 +22,7 @@ bool UZCCharacterMovementComponent::IsClimbing() const
 
 FVector UZCCharacterMovementComponent::GetClimbSurfaceNormal() const
 {
-	//TODO: Figure out a better way to do this. Average them all out probably
-	return CurrentWallHits.Num() > 0 ? CurrentWallHits[0].Normal : FVector::Zero();
+	return CurrentClimbingNormal;
 }
 
 void UZCCharacterMovementComponent::WantsClimbing()
@@ -104,6 +103,16 @@ void UZCCharacterMovementComponent::OnMovementModeChanged(EMovementMode Previous
 	Super::OnMovementModeChanged(PreviousMovementMode, PreviousCustomMode);
 }
 
+float UZCCharacterMovementComponent::GetMaxSpeed() const
+{
+	return IsClimbing() ? MaxClimbingSpeed : Super::GetMaxSpeed();
+}
+
+float UZCCharacterMovementComponent::GetMaxAcceleration() const
+{
+	return IsClimbing() ? MaxClimbingAcceleration : Super::GetMaxAcceleration();
+}
+
 void UZCCharacterMovementComponent::SweepAndStoreWallHits()
 {
 	const FCollisionShape CollisionShape = FCollisionShape::MakeCapsule(CollisionCapsulRadius, CollisionCapsulHalfHeight);
@@ -175,9 +184,109 @@ bool UZCCharacterMovementComponent::EyeHeightTrace(const float TraceDistance) co
 	return GetWorld()->LineTraceSingleByChannel(UpperEdgeHit, EyeHeight, End, ECC_WorldStatic, ClimbQueryParams);
 }
 
-void UZCCharacterMovementComponent::PhysClimbing(float deltaTime, int32 Iterations)
+void UZCCharacterMovementComponent::PhysClimbing(float DeltaTime, int32 Iterations)
 {
+	// Note: Taken from UCharacterMovementComponent::PhysFlying
+	if (DeltaTime > MIN_TICK_TIME)
+		return;
 
+	ComputeSurfaceInfo();
+
+	if (ShouldStopClimbing())
+	{
+		StopClimbing(DeltaTime, Iterations);
+		return;
+	}
+
+	ComputeClimbingVelocity(DeltaTime);
+
+	const FVector OldLocation = UpdatedComponent->GetComponentLocation();
+
+	MoveAlongClimbingSurface(DeltaTime);
+
+	if (!HasAnimRootMotion() && !CurrentRootMotion.HasOverrideVelocity())
+		Velocity = (UpdatedComponent->GetComponentLocation() - OldLocation) / DeltaTime;
+
+	SnapToClimbingSurface(DeltaTime);
+}
+
+void UZCCharacterMovementComponent::ComputeSurfaceInfo()
+{
+	// TODO: Take an average of all the hits
+	if (CurrentWallHits.Num() > 0)
+	{
+		CurrentClimbingNormal = CurrentWallHits[0].Normal;
+		CurrentClimbingPosition = CurrentWallHits[0].ImpactPoint;
+	}
+}
+
+void UZCCharacterMovementComponent::ComputeClimbingVelocity(float DeltaTime)
+{
+	// Note: Taken from UCharacterMovementComponent::PhysFlying
+	RestorePreAdditiveRootMotionVelocity();
+
+	if (!HasAnimRootMotion() && !CurrentRootMotion.HasOverrideVelocity())
+	{
+		constexpr float Friction = 0.f;
+		constexpr bool bFluid = false;
+		CalcVelocity(DeltaTime, Friction, bFluid, BrakingDecelerationClimbing);
+	}
+
+	ApplyRootMotionToVelocity(DeltaTime);
+}
+
+bool UZCCharacterMovementComponent::ShouldStopClimbing()
+{
+	const bool bIsOnCeiling = FVector::Parallel(CurrentClimbingNormal, FVector::UpVector);
+	return !bWantsToClimb || CurrentClimbingNormal.IsZero() || bIsOnCeiling;
+}
+
+void UZCCharacterMovementComponent::StopClimbing(float DeltaTime, int32 Iterations)
+{
+	bWantsToClimb = false;
+	SetMovementMode(EMovementMode::MOVE_Falling);
+	StartNewPhysics(DeltaTime, Iterations);
+}
+
+void UZCCharacterMovementComponent::MoveAlongClimbingSurface(float DeltaTime)
+{
+	// Note: Taken from UCharacterMovementComponent::PhysFlying
+	const FVector Adjusted = Velocity;
+
+	FHitResult Hit(1.f);
+
+	SafeMoveUpdatedComponent(Adjusted, GetSmoothClimbingRotation(DeltaTime), true, Hit);
+
+	if (Hit.Time < 1.f)
+	{
+		HandleImpact(Hit, DeltaTime, Adjusted);
+		SlideAlongSurface(Adjusted, (1.f - Hit.Time), Hit.Normal, Hit, true);
+	}
+}
+
+FQuat UZCCharacterMovementComponent::GetSmoothClimbingRotation(float DeltaTime) const
+{
+	// Smoothly rotate towards the surface (opposite surface normal)
+	const FQuat Current = UpdatedComponent->GetComponentQuat();
+	const FQuat Target = FRotationMatrix::MakeFromX(-CurrentClimbingNormal).ToQuat();
+
+	return FMath::QInterpTo(Current, Target, DeltaTime, ClimbingRotationSpeed);
+}
+
+void UZCCharacterMovementComponent::SnapToClimbingSurface(float DeltaTime) const
+{
+	// TODO: Maybe change to a threshold later on.
+	// If within the threshold move smoothly
+	// If not we can teleport instantly to the correct distance decreasing the change the character loses grip at high velocities
+	const FVector Forward = UpdatedComponent->GetForwardVector();
+	const FVector Location = UpdatedComponent->GetComponentLocation();
+	const FQuat Rotation = UpdatedComponent->GetComponentQuat();
+
+	const FVector ForwardDifference = (CurrentClimbingPosition - Location).ProjectOnTo(Forward);
+	const FVector Offset = -CurrentClimbingNormal * (ForwardDifference.Length() - ClimbingDistanceFromSurface);
+
+	const bool bSweep = true;
+	UpdatedComponent->MoveComponent(Offset * ClimbingSnapSpeed * DeltaTime, Rotation, bSweep);
 }
 
 void UZCCharacterMovementComponent::DrawEyeTraceDebug(const FVector& Start, const FVector& End) const
