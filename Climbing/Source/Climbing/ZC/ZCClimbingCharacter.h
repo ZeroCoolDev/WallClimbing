@@ -9,7 +9,7 @@
 /**
  * 
  */
-UCLASS()
+UCLASS(config=Game)
 class CLIMBING_API AZCClimbingCharacter : public AClimbingCharacter
 {
 	GENERATED_BODY()
@@ -21,7 +21,7 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	UFUNCTION(BlueprintPure)
-	FORCEINLINE class UZCCharacterMovementComponent* GetZCMovementComponent() const { return MovementComponent; }
+	class UZCCharacterMovementComponent* GetZCMovementComponent() const { return MovementComponent; }
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* ClimbAction;

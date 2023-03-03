@@ -5,16 +5,18 @@
 #include "EnhancedInputComponent.h"
 
 AZCClimbingCharacter::AZCClimbingCharacter(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer.SetDefaultSubobjectClass<UZCCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
+	: Super(ObjectInitializer.SetDefaultSubobjectClass<UZCCharacterMovementComponent>(AClimbingCharacter::CharacterMovementComponentName))
 {
 	PrimaryActorTick.bCanEverTick = true;
+	MovementComponent = Cast<UZCCharacterMovementComponent>(GetCharacterMovement());
 }
 
 void AZCClimbingCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	MovementComponent = Cast<UZCCharacterMovementComponent>(GetCharacterMovement());
+	if (!MovementComponent)
+		MovementComponent = Cast<UZCCharacterMovementComponent>(GetCharacterMovement());
 }
 
 void AZCClimbingCharacter::Move(const FInputActionValue& Value)
