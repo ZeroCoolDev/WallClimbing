@@ -4798,6 +4798,18 @@
 			"Type": "RequiredResource"
 		},
 		{
+			"Path": "$(EngineDir)/Plugins/Marketplace/MixamoAnimationRetargeting2/Binaries/Win64/UnrealEditor-MixamoAnimationRetargeting.dll",
+			"Type": "DynamicLibrary"
+		},
+		{
+			"Path": "$(EngineDir)/Plugins/Marketplace/MixamoAnimationRetargeting2/Binaries/Win64/UnrealEditor-MixamoAnimationRetargeting.pdb",
+			"Type": "SymbolFile"
+		},
+		{
+			"Path": "$(EngineDir)/Plugins/Marketplace/MixamoAnimationRetargeting2/Binaries/Win64/UnrealEditor.modules",
+			"Type": "RequiredResource"
+		},
+		{
 			"Path": "$(EngineDir)/Plugins/Media/AndroidMedia/Binaries/Win64/UnrealEditor-AndroidMediaEditor.dll",
 			"Type": "DynamicLibrary"
 		},
@@ -26781,6 +26793,10 @@
 		},
 		{
 			"Path": "$(EngineDir)/Plugins/Interchange/Runtime/Interchange.uplugin",
+			"Type": "UFS"
+		},
+		{
+			"Path": "$(EngineDir)/Plugins/Marketplace/MixamoAnimationRetargeting2/MixamoAnimationRetargeting.uplugin",
 			"Type": "UFS"
 		},
 		{
