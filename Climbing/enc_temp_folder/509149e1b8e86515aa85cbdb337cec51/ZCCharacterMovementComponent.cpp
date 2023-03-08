@@ -192,7 +192,7 @@ void UZCCharacterMovementComponent::PhysClimbing(float DeltaTime, int32 Iteratio
 
 	ComputeSurfaceInfo();
 
-	if (ShouldStopClimbing() || ClimbDownToFloor())
+	if (ShouldStopClimbing())
 	{
 		StopClimbing(DeltaTime, Iterations);
 		return;
@@ -304,30 +304,6 @@ void UZCCharacterMovementComponent::SnapToClimbingSurface(float DeltaTime) const
 
 	const bool bSweep = true;
 	UpdatedComponent->MoveComponent(Offset * ClimbingSnapSpeed * DeltaTime, Rotation, bSweep);
-}
-
-bool UZCCharacterMovementComponent::ClimbDownToFloor() const
-{
-	FHitResult FloorHit;
-	if (!CheckFloor(FloorHit))
-		return false;
-
-	const bool bOnWalkableFloor = FloorHit.Normal.Z > GetWalkableFloorZ();
-
-	const float DownSpeed = FVector::DotProduct(Velocity, -FloorHit.Normal);//really this is the cos of the angle between them
-	const bool bIsMovingTowardsFloor = (DownSpeed >= MaxClimbingSpeed / 3) && bOnWalkableFloor;
-
-	const bool bIsClimbingFloor = CurrentClimbingNormal.Z > GetWalkableFloorZ();
-
-	return bIsMovingTowardsFloor || (bIsClimbingFloor && bOnWalkableFloor);
-}
-
-bool UZCCharacterMovementComponent::CheckFloor(FHitResult& FloorHit) const
-{
-	const FVector Start = UpdatedComponent->GetComponentLocation();
-	const FVector End = Start + FVector::DownVector * FloorCheckDistance;
-
-	return GetWorld()->LineTraceSingleByChannel(FloorHit, Start, End, ECC_WorldStatic, ClimbQueryParams);
 }
 
 void UZCCharacterMovementComponent::DrawEyeTraceDebug(const FVector& Start, const FVector& End) const

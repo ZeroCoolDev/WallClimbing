@@ -51,9 +51,6 @@ private:
 	FQuat GetSmoothClimbingRotation(float DeltaTime) const;
 	void SnapToClimbingSurface(float DeltaTime) const;
 
-	bool ClimbDownToFloor() const;
-	bool CheckFloor(FHitResult& FloorHit) const;
-
 	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere)
 	int CollisionCapsulRadius = 50;
 	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere)
@@ -80,8 +77,6 @@ private:
 	float ClimbingSnapSpeed = 4.f;
 	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere, meta = (ClampMin = "0.0", ClampMax = "90.0"))
 	float ClimbingDistanceFromSurface = 45.f;
-	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere, meta = (ClampMin = "1.0", ClampMax = "500.0"))
-	float FloorCheckDistance = 100.f;
 
 	TArray<FHitResult> CurrentWallHits;
 	FCollisionQueryParams ClimbQueryParams;
