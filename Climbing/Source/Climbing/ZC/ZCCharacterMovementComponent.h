@@ -52,7 +52,7 @@ private:
 	void SnapToClimbingSurface(float DeltaTime) const;
 
 	bool ClimbDownToFloor() const;
-	bool CheckFloor(FHitResult& FloorHit) const;
+	bool CheckFloor(FHitResult& OutFloorHit) const;
 
 	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere)
 	int CollisionCapsulRadius = 50;
@@ -81,7 +81,7 @@ private:
 	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere, meta = (ClampMin = "0.0", ClampMax = "90.0"))
 	float ClimbingDistanceFromSurface = 45.f;
 	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere, meta = (ClampMin = "1.0", ClampMax = "500.0"))
-	float FloorCheckDistance = 100.f;
+	float FloorCheckDistance = 120.f;
 
 	TArray<FHitResult> CurrentWallHits;
 	FCollisionQueryParams ClimbQueryParams;
@@ -92,6 +92,7 @@ private:
 	bool bWantsToClimb = false;
 
 private:
+	void DrawClimbDownDebug(const FVector& Start, const FVector& End) const;
 	void DrawEyeTraceDebug(const FVector& Start, const FVector& End) const;
 	void DrawDebug(FVector SweepLocation) const;
 	bool bIsDebugEnabled = false;

@@ -312,22 +312,39 @@ bool UZCCharacterMovementComponent::ClimbDownToFloor() const
 	if (!CheckFloor(FloorHit))
 		return false;
 
+	// GetWalkableFloor is a unit vector describing the steepest walkable surface (~45 degrees, with Z of ~0.7)
+	// A hit normal with Z of 1 indicates the surface is perpendicular with respect to Z up.
+	// As the hit normal's Z goes from 1 -> 0 that indicates the surface is angled more and more until
+	// A hit normal with Z of (near)0 indicates the surface is (near)parallel 
 	const bool bOnWalkableFloor = FloorHit.Normal.Z > GetWalkableFloorZ();
 
-	const float DownSpeed = FVector::DotProduct(Velocity, -FloorHit.Normal);//really this is the cos of the angle between them
-	const bool bIsMovingTowardsFloor = (DownSpeed >= MaxClimbingSpeed / 3) && bOnWalkableFloor;
+	// Upwards velocity will be opposite the -normal resulting in negatives
+	// Downwards velocity will be positive
+	const float DownSpeed = FVector::DotProduct(Velocity.GetSafeNormal(), -FloorHit.Normal);
+	const bool bIsMovingTowardsFloor = DownSpeed > 0 && bOnWalkableFloor;
 
+	// Just a double check to make sure the raycast didn't hit a tiny steep slope, but the actual surface we're climbing on is floor
 	const bool bIsClimbingFloor = CurrentClimbingNormal.Z > GetWalkableFloorZ();
 
 	return bIsMovingTowardsFloor || (bIsClimbingFloor && bOnWalkableFloor);
 }
 
-bool UZCCharacterMovementComponent::CheckFloor(FHitResult& FloorHit) const
+bool UZCCharacterMovementComponent::CheckFloor(FHitResult& OutFloorHit) const
 {
 	const FVector Start = UpdatedComponent->GetComponentLocation();
 	const FVector End = Start + FVector::DownVector * FloorCheckDistance;
 
-	return GetWorld()->LineTraceSingleByChannel(FloorHit, Start, End, ECC_WorldStatic, ClimbQueryParams);
+	DrawClimbDownDebug(Start, End);
+
+	return GetWorld()->LineTraceSingleByChannel(OutFloorHit, Start, End, ECC_WorldStatic, ClimbQueryParams);
+}
+
+void UZCCharacterMovementComponent::DrawClimbDownDebug(const FVector& Start, const FVector& End) const
+{
+	if (!bIsDebugEnabled)
+		return;
+
+	DrawDebugLine(GetWorld(), Start, End, FColor::Yellow);
 }
 
 void UZCCharacterMovementComponent::DrawEyeTraceDebug(const FVector& Start, const FVector& End) const
