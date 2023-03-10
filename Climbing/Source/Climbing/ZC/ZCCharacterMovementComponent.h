@@ -54,6 +54,11 @@ private:
 	bool ClimbDownToFloor() const;
 	bool CheckFloor(FHitResult& OutFloorHit) const;
 
+	bool TryClimbUpLedge() const;
+	bool HasReachedLedge() const;
+	bool IsLedgeWalkable(const FVector& LocationToCheck) const;
+	bool CanMoveToLedgeClimbLocation() const;
+
 	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere)
 	int CollisionCapsulRadius = 50;
 	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere)
@@ -82,6 +87,11 @@ private:
 	float ClimbingDistanceFromSurface = 45.f;
 	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere, meta = (ClampMin = "1.0", ClampMax = "500.0"))
 	float FloorCheckDistance = 120.f;
+
+	UPROPERTY(Category = "Character Movement: Climbing", EditDefaultsOnly)
+	UAnimMontage* LedgeClimbMontage;
+	UPROPERTY()
+	UAnimInstance* AnimInstance;
 
 	TArray<FHitResult> CurrentWallHits;
 	FCollisionQueryParams ClimbQueryParams;

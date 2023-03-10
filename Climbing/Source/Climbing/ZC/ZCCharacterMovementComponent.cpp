@@ -40,6 +40,8 @@ void UZCCharacterMovementComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
+	AnimInstance = GetCharacterOwner()->GetMesh()->GetAnimInstance();
+
 	// Don't want to sweep ourselves
 	ClimbQueryParams.AddIgnoredActor(GetOwner());
 }
@@ -176,7 +178,10 @@ bool UZCCharacterMovementComponent::EyeHeightTrace(const float TraceDistance) co
 	FHitResult UpperEdgeHit;
 
 	const ACharacter* Owner = GetCharacterOwner();
-	const FVector EyeHeight = UpdatedComponent->GetComponentLocation() + (UpdatedComponent->GetUpVector() * (Owner ? Owner->BaseEyeHeight : 1));
+	const float BaseEyeHeight = Owner ? Owner->BaseEyeHeight : 1;
+	const float EyeHeightOffset = IsClimbing() ? BaseEyeHeight + CollisionCapsulClimbingShinkAmount : BaseEyeHeight;
+
+	const FVector EyeHeight = UpdatedComponent->GetComponentLocation() + (UpdatedComponent->GetUpVector() * EyeHeightOffset);
 	const FVector End = EyeHeight + (UpdatedComponent->GetForwardVector() * TraceDistance);
 
 	DrawEyeTraceDebug(EyeHeight, End);
@@ -203,6 +208,8 @@ void UZCCharacterMovementComponent::PhysClimbing(float DeltaTime, int32 Iteratio
 	const FVector OldLocation = UpdatedComponent->GetComponentLocation();
 
 	MoveAlongClimbingSurface(DeltaTime);
+
+	TryClimbUpLedge();
 
 	if (!HasAnimRootMotion() && !CurrentRootMotion.HasOverrideVelocity())
 		Velocity = (UpdatedComponent->GetComponentLocation() - OldLocation) / DeltaTime;
@@ -337,6 +344,46 @@ bool UZCCharacterMovementComponent::CheckFloor(FHitResult& OutFloorHit) const
 	DrawClimbDownDebug(Start, End);
 
 	return GetWorld()->LineTraceSingleByChannel(OutFloorHit, Start, End, ECC_WorldStatic, ClimbQueryParams);
+}
+
+bool UZCCharacterMovementComponent::TryClimbUpLedge() const
+{
+	if (!AnimInstance || !LedgeClimbMontage)
+		return false;
+	if (AnimInstance->Montage_IsPlaying(LedgeClimbMontage))
+		return false;
+
+	const float UpSpeed = FVector::DotProduct(Velocity.GetSafeNormal(), UpdatedComponent->GetUpVector());
+	const bool bIsMovingUp = UpSpeed > 0;
+
+	if (bIsMovingUp && HasReachedLedge() && CanMoveToLedgeClimbLocation())
+	{
+		const FRotator StandRotation = FRotator(0, UpdatedComponent->GetComponentRotation().Yaw, 0);
+		UpdatedComponent->SetRelativeRotation(StandRotation);
+		AnimInstance->Montage_Play(LedgeClimbMontage);
+
+		return true;
+	}
+
+	return false;
+}
+
+bool UZCCharacterMovementComponent::HasReachedLedge() const
+{
+	//const UCapsuleComponent* Capsule = CharacterOwner->GetCapsuleComponent();
+	const float TraceDistance = CollisionCapsulRadius + CollisionCapsulForwardOffset;
+	
+	return !EyeHeightTrace(TraceDistance);
+}
+
+bool UZCCharacterMovementComponent::IsLedgeWalkable(const FVector& LocationToCheck) const
+{
+	return true;
+}
+
+bool UZCCharacterMovementComponent::CanMoveToLedgeClimbLocation() const
+{
+	return true;
 }
 
 void UZCCharacterMovementComponent::DrawClimbDownDebug(const FVector& Start, const FVector& End) const
