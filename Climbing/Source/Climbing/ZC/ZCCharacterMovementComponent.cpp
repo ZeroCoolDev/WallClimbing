@@ -199,8 +199,12 @@ void UZCCharacterMovementComponent::PhysClimbing(float DeltaTime, int32 Iteratio
 
 	if (ShouldStopClimbing() || ClimbDownToFloor())
 	{
-		StopClimbing(DeltaTime, Iterations);
-		return;
+		// Don't exit climbing if the montage is done otherwise the capsule returns to full height and regular physics takes over too early resulting in falling off the ledge
+		if (AnimInstance && !AnimInstance->Montage_IsPlaying(LedgeClimbMontage))
+		{
+			StopClimbing(DeltaTime, Iterations);
+			return;
+		}
 	}
 
 	ComputeClimbingVelocity(DeltaTime);
@@ -292,6 +296,9 @@ FQuat UZCCharacterMovementComponent::GetSmoothClimbingRotation(float DeltaTime) 
 {
 	// Smoothly rotate towards the surface (opposite surface normal)
 	const FQuat Current = UpdatedComponent->GetComponentQuat();
+	if (HasAnimRootMotion() || CurrentRootMotion.HasOverrideVelocity())
+		return Current;
+
 	const FQuat Target = FRotationMatrix::MakeFromX(-CurrentClimbingNormal).ToQuat();
 
 	return FMath::QInterpTo(Current, Target, DeltaTime, ClimbingRotationSpeed);
