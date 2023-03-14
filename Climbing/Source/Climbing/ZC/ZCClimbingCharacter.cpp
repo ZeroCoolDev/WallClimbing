@@ -86,6 +86,6 @@ void AZCClimbingCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		// Climbing
 		EnhancedInputComponent->BindAction(ClimbAction, ETriggerEvent::Triggered, this, &AZCClimbingCharacter::Climb);
 		EnhancedInputComponent->BindAction(CancelClimbAction, ETriggerEvent::Triggered, this, &AZCClimbingCharacter::CancelClimb);
-		EnhancedInputComponent->BindAction(ClimbDashAction, ETriggerEvent::Triggered, this, &AZCClimbingCharacter::ClimbDash);
+		EnhancedInputComponent->BindAction(ClimbDashAction, ETriggerEvent::Started, this, &AZCClimbingCharacter::ClimbDash);
 	}
 }

@@ -22,6 +22,9 @@ bool UZCCharacterMovementComponent::IsClimbing() const
 
 void UZCCharacterMovementComponent::TryClimbDashing()
 {
+	if (!IsClimbing())
+		return;
+
 	if (ClimbDashCurve && !bWantsToClimbDash)
 	{
 		bWantsToClimbDash = true;
@@ -498,7 +501,9 @@ void UZCCharacterMovementComponent::DrawDebug(FVector SweepLocation) const
 	FColor SweepColor = FColor::White;
 	if (CurrentWallHits.Num() > 0)
 	{
-		if (IsClimbing())
+		if (IsClimbDashing())
+			SweepColor = FColor::Magenta;
+		else if (IsClimbing())
 			SweepColor = FColor::Green;
 		else if (CanStartClimbing() && !bWantsToClimb)
 			SweepColor = FColor::Yellow;
