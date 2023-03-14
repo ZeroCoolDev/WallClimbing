@@ -27,6 +27,8 @@ public:
 	class UInputAction* ClimbAction;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* CancelClimbAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* ClimbDashAction;
 
 protected:
 	virtual void BeginPlay() override;
@@ -35,6 +37,7 @@ protected:
 	// Process raw input for velocity for climbing
 	void Climb(const FInputActionValue& Value);
 	void CancelClimb(const FInputActionValue& Value);
+	void ClimbDash(const FInputActionValue& Value);
 
 	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly)
 	class UZCCharacterMovementComponent* MovementComponent;

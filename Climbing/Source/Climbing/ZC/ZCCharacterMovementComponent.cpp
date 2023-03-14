@@ -20,6 +20,17 @@ bool UZCCharacterMovementComponent::IsClimbing() const
 	return MovementMode == EMovementMode::MOVE_Custom && CustomMovementMode == ECustomMovementMode::CMOVE_Climbing;
 }
 
+void UZCCharacterMovementComponent::TryClimbDashing()
+{
+	if (ClimbDashCurve && !bWantsToClimbDash)
+	{
+		bWantsToClimbDash = true;
+		CurrentClimbDashTime = 0.f;
+
+		CacheClimbDashDirection();
+	}
+}
+
 FVector UZCCharacterMovementComponent::GetClimbSurfaceNormal() const
 {
 	return CurrentClimbingNormal;
@@ -207,12 +218,12 @@ void UZCCharacterMovementComponent::PhysClimbing(float DeltaTime, int32 Iteratio
 		}
 	}
 
+	UpdateClimbDashState(DeltaTime);
 	ComputeClimbingVelocity(DeltaTime);
 
 	const FVector OldLocation = UpdatedComponent->GetComponentLocation();
 
 	MoveAlongClimbingSurface(DeltaTime);
-
 	TryClimbUpLedge();
 
 	if (!HasAnimRootMotion() && !CurrentRootMotion.HasOverrideVelocity())
@@ -255,9 +266,19 @@ void UZCCharacterMovementComponent::ComputeClimbingVelocity(float DeltaTime)
 
 	if (!HasAnimRootMotion() && !CurrentRootMotion.HasOverrideVelocity())
 	{
-		constexpr float Friction = 0.f;
-		constexpr bool bFluid = false;
-		CalcVelocity(DeltaTime, Friction, bFluid, BrakingDecelerationClimbing);
+		if (bWantsToClimbDash)
+		{
+			AlignClimbDashDirection();
+
+			const float CurrentCurveSpeed = ClimbDashCurve->GetFloatValue(CurrentClimbDashTime);
+			Velocity = ClimbDashDirection * CurrentCurveSpeed;
+		}
+		else
+		{
+			constexpr float Friction = 0.f;
+			constexpr bool bFluid = false;
+			CalcVelocity(DeltaTime, Friction, bFluid, BrakingDecelerationClimbing);
+		}
 	}
 
 	ApplyRootMotionToVelocity(DeltaTime);
@@ -271,6 +292,8 @@ bool UZCCharacterMovementComponent::ShouldStopClimbing()
 
 void UZCCharacterMovementComponent::StopClimbing(float DeltaTime, int32 Iterations)
 {
+	StopClimbDashing();
+
 	bWantsToClimb = false;
 	SetMovementMode(EMovementMode::MOVE_Falling);
 	StartNewPhysics(DeltaTime, Iterations);
@@ -300,8 +323,9 @@ FQuat UZCCharacterMovementComponent::GetSmoothClimbingRotation(float DeltaTime) 
 		return Current;
 
 	const FQuat Target = FRotationMatrix::MakeFromX(-CurrentClimbingNormal).ToQuat();
+	const float RotationSpeed = ClimbingRotationSpeed * FMath::Max(1, Velocity.Length() / MaxClimbingSpeed);// TODO: investigate an alternate way to do this
 
-	return FMath::QInterpTo(Current, Target, DeltaTime, ClimbingRotationSpeed);
+	return FMath::QInterpTo(Current, Target, DeltaTime, RotationSpeed);
 }
 
 void UZCCharacterMovementComponent::SnapToClimbingSurface(float DeltaTime) const
@@ -317,7 +341,44 @@ void UZCCharacterMovementComponent::SnapToClimbingSurface(float DeltaTime) const
 	const FVector Offset = -CurrentClimbingNormal * (ForwardDifference.Length() - ClimbingDistanceFromSurface);
 
 	const bool bSweep = true;
-	UpdatedComponent->MoveComponent(Offset * ClimbingSnapSpeed * DeltaTime, Rotation, bSweep);
+	const float SnapSpeed = ClimbingSnapSpeed * FMath::Max(1, Velocity.Length() / MaxClimbingSpeed);
+	UpdatedComponent->MoveComponent(Offset * SnapSpeed * DeltaTime, Rotation, bSweep);
+}
+
+void UZCCharacterMovementComponent::CacheClimbDashDirection()
+{
+	ClimbDashDirection = UpdatedComponent->GetUpVector();
+
+	const float AccelerationThreshold = MaxClimbingAcceleration / 10;// magic number here just for testing
+	if (Acceleration.Length() > AccelerationThreshold)
+		ClimbDashDirection = Acceleration.GetSafeNormal();
+}
+
+void UZCCharacterMovementComponent::UpdateClimbDashState(float DeltaTime)
+{
+	if (!bWantsToClimbDash)
+		return;
+
+	CurrentClimbDashTime += DeltaTime;
+
+	// TODO: Better to cache it when dash starts
+	float MinTime, MaxTime;
+	ClimbDashCurve->GetTimeRange(MinTime, MaxTime);
+
+	if (CurrentClimbDashTime >= MaxTime)
+		StopClimbDashing();
+}
+
+void UZCCharacterMovementComponent::AlignClimbDashDirection()
+{
+	const FVector HorizontalSurfaceNormal = GetClimbSurfaceNormal().GetSafeNormal2D();// gets the X and Y of the surface we're essentially prone against so up/down left/right
+	ClimbDashDirection = FVector::VectorPlaneProject(ClimbDashDirection, HorizontalSurfaceNormal);// TODO: investigate an alternate way to do this
+}
+
+void UZCCharacterMovementComponent::StopClimbDashing()
+{
+	bWantsToClimbDash = false;
+	CurrentClimbDashTime = 0.f;
 }
 
 bool UZCCharacterMovementComponent::ClimbDownToFloor() const

@@ -65,6 +65,12 @@ void AZCClimbingCharacter::CancelClimb(const FInputActionValue& Value)
 		MovementComponent->CancelClimbing();
 }
 
+void AZCClimbingCharacter::ClimbDash(const FInputActionValue& Value)
+{
+	if (MovementComponent)
+		MovementComponent->TryClimbDashing();
+}
+
 void AZCClimbingCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -80,5 +86,6 @@ void AZCClimbingCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		// Climbing
 		EnhancedInputComponent->BindAction(ClimbAction, ETriggerEvent::Triggered, this, &AZCClimbingCharacter::Climb);
 		EnhancedInputComponent->BindAction(CancelClimbAction, ETriggerEvent::Triggered, this, &AZCClimbingCharacter::CancelClimb);
+		EnhancedInputComponent->BindAction(ClimbDashAction, ETriggerEvent::Triggered, this, &AZCClimbingCharacter::ClimbDash);
 	}
 }

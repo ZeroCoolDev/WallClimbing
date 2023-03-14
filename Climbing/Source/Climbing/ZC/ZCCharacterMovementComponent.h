@@ -18,6 +18,15 @@ public:
 	UZCCharacterMovementComponent(){}
 	virtual ~UZCCharacterMovementComponent(){}
 
+	UFUNCTION(BlueprintCallable)
+	void TryClimbDashing();
+
+	UFUNCTION(BlueprintPure)
+	bool IsClimbDashing() const { return IsClimbing() && bWantsToClimbDash; }
+
+	UFUNCTION(BlueprintPure)
+	FVector GetClimbDashDirection() const { return ClimbDashDirection; }
+
 	UFUNCTION(BlueprintPure)
 	bool IsClimbing() const;
 
@@ -51,9 +60,13 @@ private:
 	FQuat GetSmoothClimbingRotation(float DeltaTime) const;
 	void SnapToClimbingSurface(float DeltaTime) const;
 
+	void CacheClimbDashDirection();
+	void UpdateClimbDashState(float DeltaTime);
+	void AlignClimbDashDirection();
+	void StopClimbDashing();
+
 	bool ClimbDownToFloor() const;
 	bool CheckFloor(FHitResult& OutFloorHit) const;
-
 	bool TryClimbUpLedge() const;
 	bool HasReachedLedge() const;
 	bool IsLedgeWalkable(const FVector& LocationToCheck) const;
@@ -87,6 +100,12 @@ private:
 	float ClimbingDistanceFromSurface = 45.f;
 	UPROPERTY(Category = "Character Movement: Climbing", EditAnywhere, meta = (ClampMin = "1.0", ClampMax = "500.0"))
 	float FloorCheckDistance = 120.f;
+
+	UPROPERTY(Category = "Character Movement: Climbing", EditDefaultsOnly)
+	UCurveFloat* ClimbDashCurve;
+	FVector ClimbDashDirection;
+	bool bWantsToClimbDash = false;
+	float CurrentClimbDashTime;
 
 	UPROPERTY(Category = "Character Movement: Climbing", EditDefaultsOnly)
 	UAnimMontage* LedgeClimbMontage;
