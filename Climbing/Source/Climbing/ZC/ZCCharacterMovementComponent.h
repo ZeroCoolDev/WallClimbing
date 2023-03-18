@@ -24,6 +24,9 @@ public:
 	UFUNCTION(BlueprintPure)
 	bool IsClimbDashing() const { return IsClimbing() && bWantsToClimbDash; }
 
+	UFUNCTION(BlueprintCallable)
+	bool IsLedgeClimbing() const { return bIsInLedgeClimb; }
+
 	UFUNCTION(BlueprintPure)
 	FVector GetClimbDashDirection() const { return ClimbDashDirection; }
 
@@ -67,7 +70,7 @@ private:
 
 	bool ClimbDownToFloor() const;
 	bool CheckFloor(FHitResult& OutFloorHit) const;
-	bool TryClimbUpLedge() const;
+	bool TryClimbUpLedge();
 	bool HasReachedLedge() const;
 	bool IsLedgeWalkable(const FVector& LocationToCheck) const;
 	bool CanMoveToLedgeClimbLocation() const;
@@ -111,6 +114,7 @@ private:
 	UAnimMontage* LedgeClimbMontage;
 	UPROPERTY()
 	UAnimInstance* AnimInstance;
+	bool bIsInLedgeClimb = false;
 
 	TArray<FHitResult> CurrentWallHits;
 	FCollisionQueryParams ClimbQueryParams;

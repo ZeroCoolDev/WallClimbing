@@ -298,6 +298,7 @@ void UZCCharacterMovementComponent::StopClimbing(float DeltaTime, int32 Iteratio
 	StopClimbDashing();
 
 	bWantsToClimb = false;
+	bIsInLedgeClimb = false;
 	SetMovementMode(EMovementMode::MOVE_Falling);
 	StartNewPhysics(DeltaTime, Iterations);
 }
@@ -417,7 +418,7 @@ bool UZCCharacterMovementComponent::CheckFloor(FHitResult& OutFloorHit) const
 	return GetWorld()->LineTraceSingleByChannel(OutFloorHit, Start, End, ECC_WorldStatic, ClimbQueryParams);
 }
 
-bool UZCCharacterMovementComponent::TryClimbUpLedge() const
+bool UZCCharacterMovementComponent::TryClimbUpLedge()
 {
 	if (!AnimInstance || !LedgeClimbMontage)
 		return false;
@@ -432,6 +433,7 @@ bool UZCCharacterMovementComponent::TryClimbUpLedge() const
 		const FRotator StandRotation = FRotator(0, UpdatedComponent->GetComponentRotation().Yaw, 0);
 		UpdatedComponent->SetRelativeRotation(StandRotation);
 		AnimInstance->Montage_Play(LedgeClimbMontage);
+		bIsInLedgeClimb = true;
 
 		return true;
 	}
