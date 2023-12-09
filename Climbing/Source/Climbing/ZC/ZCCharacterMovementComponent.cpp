@@ -192,7 +192,7 @@ bool UZCCharacterMovementComponent::EyeHeightTrace(const float TraceDistance) co
 	FHitResult UpperEdgeHit;
 
 	const ACharacter* Owner = GetCharacterOwner();
-	const float BaseEyeHeight = Owner ? Owner->BaseEyeHeight : 1;
+	const float BaseEyeHeight = Owner ? Owner->BaseEyeHeight + 30 : 1;
 	const float EyeHeightOffset = IsClimbing() ? BaseEyeHeight + CollisionCapsulClimbingShinkAmount : BaseEyeHeight;
 
 	const FVector EyeHeight = UpdatedComponent->GetComponentLocation() + (UpdatedComponent->GetUpVector() * EyeHeightOffset);
@@ -462,7 +462,7 @@ bool UZCCharacterMovementComponent::IsLedgeWalkable(const FVector& LocationToChe
 bool UZCCharacterMovementComponent::CanMoveToLedgeClimbLocation() const
 {
 	// TODO: Change magic number into property
-	const FVector VerticalOffset = FVector::UpVector * 160.f;
+	const FVector VerticalOffset = FVector::UpVector * 200.f;
 	const FVector HorizontalOffset = UpdatedComponent->GetForwardVector() * 120.f;
 
 	const FVector LocationToCheck = UpdatedComponent->GetComponentLocation() + HorizontalOffset + VerticalOffset;
