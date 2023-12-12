@@ -454,9 +454,9 @@ bool UZCCharacterMovementComponent::IsLedgeWalkable(const FVector& LocationToChe
 	const FVector CheckEnd = LocationToCheck + (FVector::DownVector * 250.f);
 
 	FHitResult LedgeHit;
-	const bool dHitLedgeGround = GetWorld()->LineTraceSingleByChannel(LedgeHit, LocationToCheck, CheckEnd, ECC_WorldStatic, ClimbQueryParams);
+	const bool bHitLedgeGround = GetWorld()->LineTraceSingleByChannel(LedgeHit, LocationToCheck, CheckEnd, ECC_WorldStatic, ClimbQueryParams);
 
-	return dHitLedgeGround && LedgeHit.Normal.Z >= GetWalkableFloorZ();
+	return bHitLedgeGround && LedgeHit.Normal.Z >= GetWalkableFloorZ();
 }
 
 bool UZCCharacterMovementComponent::CanMoveToLedgeClimbLocation() const
@@ -475,6 +475,8 @@ bool UZCCharacterMovementComponent::CanMoveToLedgeClimbLocation() const
 	const UCapsuleComponent* Capsule = CharacterOwner->GetCapsuleComponent();
 
 	const bool bBlocked = GetWorld()->SweepSingleByChannel(CapsulHit, CapsulStartCheck, LocationToCheck, FQuat::Identity, ECC_WorldStatic, Capsule->GetCollisionShape(), ClimbQueryParams);
+	
+	//DrawDebugCapsule(GetWorld(), LocationToCheck, Capsule->GetCollisionShape().GetCapsuleHalfHeight(), Capsule->GetCollisionShape().GetCapsuleRadius(), FQuat::Identity, bBlocked ? FColor::Red : FColor::Green);
 	return !bBlocked;
 }
 
